@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo | Gestión de Ganado y Siembras</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+    --fondo: #151c14;
+    --panel: #1f2a1d;
+    --panel-2: #2a382a;
+    --borde: #3a4b38;
+    --texto: #e6ece3;
+    --suave: #9fb09a;
+    --verde: #7CB342;
+    --verde-osc: #558b2f;
+    --amarillo: #C9A227;
+    --rojo: #E57373;
+    --rojo-osc: #b3412f;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--fondo); color: var(--texto); line-height: 1.5; }
+a { color: var(--verde); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--amarillo); outline-offset: 2px; }
+h1 { font-size: 1.7rem; margin-bottom: 1rem; }
+h2 { font-size: 1.15rem; margin-bottom: 0.8rem; }
+h3 { font-size: 1rem; margin: 1.2rem 0 0.6rem; }
+.suave { color: var(--suave); font-size: 0.92rem; }
+.vacio { color: var(--suave); text-align: center; padding: 1rem; }
+.centro { text-align: center; }
+
+/* Navegación */
+.nav { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; background: var(--panel); border-bottom: 1px solid var(--borde); padding: 0.8rem 5%; position: sticky; top: 0; z-index: 10; }
+.marca { font-weight: 800; font-size: 1.3rem; color: var(--verde); text-decoration: none; }
+.enlaces { display: flex; gap: 0.3rem; flex-wrap: wrap; flex: 1; }
+.enlaces a { color: var(--texto); text-decoration: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600; }
+.enlaces a:hover { background: var(--panel-2); }
+.enlaces a.activo { background: var(--verde-osc); color: #fff; }
+.usuario { display: flex; align-items: center; gap: 0.8rem; font-size: 0.9rem; color: var(--suave); }
+
+.pagina { width: 100%; max-width: 1150px; margin: 0 auto; padding: 1.5rem 5% 3rem; }
+.encabezado { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1rem; }
+.encabezado h1 { margin-bottom: 0; }
+.acciones { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+
+/* Tarjetas y estadísticas */
+.card { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 1.3rem; margin-bottom: 1.2rem; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.2rem; }
+.stat { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem 1.3rem; display: flex; flex-direction: column; }
+.stat .num { font-size: 2rem; font-weight: 800; line-height: 1.1; }
+.stat span:last-child { color: var(--suave); font-size: 0.92rem; }
+.stat-alerta { border-color: var(--amarillo); }
+.stat-alerta .num { color: var(--amarillo); }
+.verde-t { color: var(--verde); }
+.rojo-t { color: var(--rojo); }
+.dos-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.2rem; align-items: start; }
+.dos-col > .card { margin-bottom: 0; }
+.grafico { position: relative; height: 260px; }
+
+/* Formularios */
+.campo { margin-bottom: 0.8rem; }
+.campo label { display: block; margin-bottom: 0.25rem; font-size: 0.88rem; color: var(--suave); }
+input, select, textarea { width: 100%; padding: 0.55rem; border-radius: 6px; border: 1px solid var(--borde); background: var(--panel-2); color: var(--texto); font: inherit; }
+textarea { resize: vertical; }
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 1rem; }
+.en-linea { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
+.en-linea .campo { margin-bottom: 0; flex: 1; min-width: 120px; }
+.compacto input { width: auto; min-width: 0; padding: 0.4rem; }
+.compacto input[type="number"] { width: 90px; }
+.check { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; white-space: nowrap; }
+.check input { width: auto; }
+.formulario { max-width: 900px; }
+.filtros { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+.filtros .campo { margin-bottom: 0; flex: 1; min-width: 150px; }
+
+/* Botones */
+.btn, .btn-sec, .btn-peligro { display: inline-block; padding: 0.55rem 1.1rem; border-radius: 6px; border: 1px solid transparent; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; text-align: center; }
+.btn { background: var(--verde-osc); color: #fff; }
+.btn:hover { background: var(--verde); color: #10200a; }
+.btn-sec { background: transparent; color: var(--texto); border-color: var(--borde); }
+.btn-sec:hover { border-color: var(--verde); color: var(--verde); }
+.btn-peligro { background: transparent; color: var(--rojo); border-color: var(--rojo-osc); padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+.btn-peligro:hover { background: var(--rojo-osc); color: #fff; }
+form .btn[type="submit"] { margin-top: 0.3rem; }
+.en-linea .btn { margin-top: 0; }
+
+/* Tablas */
+.tabla-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; margin-top: 0.6rem; }
+th, td { padding: 0.6rem 0.7rem; text-align: left; border-bottom: 1px solid var(--borde); vertical-align: middle; }
+th { background: var(--panel-2); font-size: 0.85rem; color: var(--suave); text-transform: none; }
+
+/* Etiquetas y alertas */
+.badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+.badge.verde { background: #23401a; color: #c5e6a6; }
+.badge.rojo { background: #5a2420; color: #ffd0cb; }
+.badge.amarillo { background: #54430f; color: #f2dc8a; }
+.badge.gris { background: #3a3f39; color: #c9cfc7; }
+.alerta { padding: 0.7rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 600; }
+.alerta-success { background: #1f4d1a; color: #d3f0cb; }
+.alerta-danger { background: #5a2420; color: #ffd0cb; }
+.alerta-warning { background: #54430f; color: #f6e6a6; }
+.alerta-info { background: #1c4a52; color: #cdeff5; }
+
+/* Ficha del animal */
+.datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem 1.5rem; }
+.datos dt { font-size: 0.8rem; color: var(--suave); }
+.datos dd { font-weight: 600; }
+
+/* Login */
+.login { display: flex; justify-content: center; padding-top: 8vh; }
+.login .card { width: 100%; max-width: 400px; }
+.login h1 { font-size: 1.4rem; }
+.login .btn { width: 100%; }
+
+@media (max-width: 700px) {
+    .nav { gap: 0.6rem; }
+    .usuario { width: 100%; justify-content: space-between; }
+    .pagina { padding-top: 1rem; }
+}
+
+/* Solo para la demo */
+.demo-banner { background: #3a3000; color: #ffe9a6; padding: 8px 16px; font-size: 14px; text-align: center; }
+.demo-banner a { color: #F2B705; }
+.demo-accesos { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--borde); display: grid; gap: 8px; }
+.demo-accesos p { margin: 0 0 4px; font-size: 0.9rem; color: var(--suave); }
+.nav .btn-sec { padding: 0.35rem 0.8rem; font-size: 0.85rem; }
+
+</style>
+</head>
+<body>
+<div class="demo-banner">
+  <strong>DEMO</strong> · Datos simulados que se guardan solo en tu navegador. El proyecto real usa Flask y Oracle.
+  <a href="https://github.com/claudiopizarro12313/ganaderia-agro" target="_blank" rel="noopener noreferrer">Ver código</a>
+</div>
+<div id="nav"></div>
+<main class="pagina" id="app"><noscript>Esta demo necesita JavaScript para funcionar.</noscript></main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+(function () {
+  'use strict';
+  var CLAVE = 'demo-ganaderia-v1', SESION = 'demo-ganaderia-sesion';
+  var USUARIOS = [
+    { nombre: 'Administrador Finca', email: 'admin@finca.cl', clave: 'admin123', rol: 'Administrador' },
+    { nombre: 'Operario Finca', email: 'operario@finca.cl', clave: 'operario123', rol: 'Operario' }
+  ];
+  var ESPECIES = ['Bovino', 'Equino', 'Ovino', 'Caprino', 'Porcino', 'Otro'];
+  var ESTADOS = ['Activo', 'Vendido', 'Fallecido'];
+  var TIPOS = ['Vacuna', 'Tratamiento', 'Desparasitación'];
+  var CATEGORIAS = {
+    Ingreso: ['Venta de animales', 'Venta de leche', 'Venta de cosecha', 'Otros ingresos'],
+    Gasto: ['Alimento', 'Veterinario', 'Mano de obra', 'Combustible', 'Semillas e insumos', 'Mantención', 'Otros gastos']
+  };
+  var app = document.getElementById('app'), navEl = document.getElementById('nav');
+  var datos, usuario = null, mensaje = null, borrador = null, mesSel = null, charts = [], despues = null;
+  var filtros = { q: '', estado: 'Activo', especie: '' };
+  var acciones = {};
+
+  /* ---------- Utilidades ---------- */
+  function esc(t) {
+    return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function hoy() { return iso(new Date()); }
+  function mas(f, n) { var p = f.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
+  function hace(n) { return mas(hoy(), -n); }
+  function dias(a, b) {
+    var pa = a.split('-'), pb = b.split('-');
+    return Math.round((new Date(+pb[0], +pb[1] - 1, +pb[2]) - new Date(+pa[0], +pa[1] - 1, +pa[2])) / 86400000);
+  }
+  function fechaValida(s) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    var p = s.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.getFullYear() === +p[0] && d.getMonth() === +p[1] - 1 && d.getDate() === +p[2];
+  }
+  function fechaCL(f) { return f ? f.split('-').reverse().join('-') : '—'; }
+  function edad(f) {
+    if (!f) return '—';
+    var h = new Date(), p = f.split('-'), m = (h.getFullYear() - +p[0]) * 12 + h.getMonth() + 1 - +p[1];
+    if (h.getDate() < +p[2]) m--;
+    m = Math.max(m, 0);
+    var a = Math.floor(m / 12), r = m % 12;
+    return a && r ? a + ' a ' + r + ' m' : a ? a + ' a' : r + ' m';
+  }
+  function num(v, d) {
+    if (v == null || v === '') return '—';
+    return new Intl.NumberFormat('es-CL', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }).format(v);
+  }
+  function opts(lista, actual) {
+    return lista.map(function (x) { return '<option value="' + esc(x) + '"' + (x === actual ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('');
+  }
+  function badge(cls, t) { return '<span class="badge ' + cls + '">' + esc(t) + '</span>'; }
+  function aviso(tipo, texto) { mensaje = { tipo: tipo, texto: texto }; }
+  function flash() {
+    if (!mensaje) return '';
+    var m = mensaje; mensaje = null;
+    return '<div class="alerta alerta-' + m.tipo + '" role="status">' + esc(m.texto) + '</div>';
+  }
+  function esAdmin() { return !!usuario && usuario.rol === 'Administrador'; }
+  function animal(id) { return datos.animales.filter(function (a) { return a.id === id; })[0]; }
+  function nid(lista) { return lista.reduce(function (m, x) { return Math.max(m, x.id); }, 0) + 1; }
+  function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(datos)); } catch (e) {} }
+  function pesajesDe(id) { return datos.pesajes.filter(function (p) { return p.animal === id; }).sort(function (a, b) { return a.fecha.localeCompare(b.fecha); }); }
+  function ir(h) { if (location.hash === h) render(false); else location.hash = h; }
+
+  /* ---------- Datos de ejemplo (iguales a seed.py) ---------- */
+  function semilla() {
+    var an = [
+      ['CL-0001', 'Mora', 'Bovino', 'Hereford', 'H', 1200, 'Potrero Norte', 'Compra a vecino'],
+      ['CL-0002', 'Bravo', 'Bovino', 'Angus', 'M', 1500, 'Potrero Norte', 'Compra a vecino'],
+      ['CL-0003', 'Pintada', 'Bovino', 'Holstein', 'H', 800, 'Potrero Sur', 'Nacida en el predio'],
+      ['CL-0004', '', 'Bovino', 'Angus', 'M', 300, 'Potrero Sur', 'Nacido en el predio'],
+      ['CL-0005', 'Canelo', 'Equino', 'Criollo', 'M', 2200, 'Caballeriza', 'Compra'],
+      ['CL-0006', 'Lola', 'Ovino', 'Corriedale', 'H', 700, 'Potrero Este', 'Compra']
+    ].map(function (x, i) {
+      return { id: i + 1, arete: x[0], nombre: x[1], especie: x[2], raza: x[3], sexo: x[4], nac: hace(x[5]), potrero: x[6], origen: x[7], estado: 'Activo', notas: '' };
+    });
+    var idDe = {}; an.forEach(function (a) { idDe[a.arete] = a.id; });
+    var pes = [['CL-0004', 150, 142], ['CL-0004', 120, 168], ['CL-0004', 90, 192], ['CL-0004', 60, 219], ['CL-0004', 30, 243], ['CL-0004', 2, 262],
+      ['CL-0003', 90, 540], ['CL-0003', 30, 562], ['CL-0001', 60, 455], ['CL-0001', 5, 468], ['CL-0002', 45, 640]
+    ].map(function (x, i) { return { id: i + 1, animal: idDe[x[0]], fecha: hace(x[1]), kg: x[2] }; });
+    var san = [
+      ['CL-0001', 'Vacuna', 'Vacuna clostridial', 170, -10, ''],
+      ['CL-0001', 'Desparasitación', 'Ivermectina', 95, 5, ''],
+      ['CL-0003', 'Vacuna', 'Vacuna clostridial', 160, -5, ''],
+      ['CL-0004', 'Vacuna', 'Vacuna clostridial', 20, -160, ''],
+      ['CL-0002', 'Tratamiento', 'Antibiótico', 40, null, 'Herida en la pata, evolución normal']
+    ].map(function (x, i) {
+      return { id: i + 1, animal: idDe[x[0]], tipo: x[1], producto: x[2], fecha: hace(x[3]), proxima: x[4] === null ? '' : hace(x[4]), obs: x[5] };
+    });
+    var movs = [[110, 'Gasto', 'Alimento', 'Fardos de heno', 180000], [100, 'Gasto', 'Veterinario', 'Vacunas', 65000],
+      [85, 'Ingreso', 'Venta de animales', 'Venta de 2 terneros', 1250000], [70, 'Gasto', 'Semillas e insumos', 'Semilla de avena', 90000],
+      [55, 'Gasto', 'Mano de obra', 'Jornal de trabajo', 120000], [40, 'Ingreso', 'Venta de cosecha', 'Venta de maíz', 480000],
+      [25, 'Gasto', 'Combustible', 'Diésel del tractor', 70000], [12, 'Gasto', 'Alimento', 'Sales minerales', 45000],
+      [4, 'Ingreso', 'Venta de leche', 'Venta semanal', 150000]
+    ].map(function (x, i) { return { id: i + 1, fecha: hace(x[0]), tipo: x[1], cat: x[2], desc: x[3], monto: x[4] }; });
+    return {
+      animales: an, pesajes: pes, sanidad: san,
+      siembras: [{ id: 1, cultivo: 'Avena', parcela: 'Parcela 1', ha: 2.5, fecha: hace(120), estado: 'En curso' },
+                 { id: 2, cultivo: 'Maíz', parcela: 'Parcela 2', ha: 1.2, fecha: hace(220), estado: 'Cosechada' }],
+      cosechas: [{ id: 1, siembra: 2, fecha: hace(40), kg: 9600 }],
+      movs: movs
+    };
+  }
+  function cargar() {
+    try {
+      var g = JSON.parse(localStorage.getItem(CLAVE));
+      if (g && ['animales', 'pesajes', 'sanidad', 'siembras', 'cosechas', 'movs'].every(function (k) { return Array.isArray(g[k]); })) return g;
+    } catch (e) {}
+    return semilla();
+  }
+  function sesionGuardada() {
+    try { var m = sessionStorage.getItem(SESION); return USUARIOS.filter(function (u) { return u.email === m; })[0] || null; } catch (e) { return null; }
+  }
+
+  /* ---------- Cálculos ---------- */
+  function alertas() {
+    var lim = mas(hoy(), 15), salida = [];
+    datos.sanidad.forEach(function (s) {
+      var a = animal(s.animal);
+      if (!a || a.estado !== 'Activo' || !s.proxima || s.proxima > lim) return;
+      var hayMasReciente = datos.sanidad.some(function (o) { return o.animal === s.animal && o.producto === s.producto && o.fecha > s.fecha; });
+      if (hayMasReciente) return;
+      salida.push({ a: a, s: s, dias: dias(hoy(), s.proxima) });
+    });
+    return salida.sort(function (x, y) { return x.s.proxima.localeCompare(y.s.proxima); });
+  }
+  function finanzas6() {
+    var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 5);
+    var ini = iso(d).slice(0, 7), m = {};
+    datos.movs.forEach(function (x) {
+      var k = x.fecha.slice(0, 7);
+      if (k < ini) return;
+      m[k] = m[k] || { mes: k, ingresos: 0, gastos: 0 };
+      if (x.tipo === 'Ingreso') m[k].ingresos += x.monto; else m[k].gastos += x.monto;
+    });
+    return Object.keys(m).sort().map(function (k) { return m[k]; });
+  }
+  function listaAnimales() {
+    var q = filtros.q.trim().toUpperCase();
+    return datos.animales.filter(function (a) {
+      return (ESTADOS.indexOf(filtros.estado) < 0 || a.estado === filtros.estado) &&
+        (ESPECIES.indexOf(filtros.especie) < 0 || a.especie === filtros.especie) &&
+        (!q || a.arete.toUpperCase().indexOf(q) >= 0 || (a.nombre || '').toUpperCase().indexOf(q) >= 0);
+    }).sort(function (a, b) { return b.id - a.id; });
+  }
+  function ultimoPeso(id) { var p = pesajesDe(id); return p.length ? p[p.length - 1].kg : null; }
+  function descargar(nombre, encabezados, filas) {
+    var q = function (v) {
+      if (v == null) v = '';
+      if (typeof v === 'string' && /^[=+\-@]/.test(v)) v = "'" + v;
+      return '"' + String(v).replace(/"/g, '""') + '"';
+    };
+    var lineas = [encabezados.map(q).join(',')].concat(filas.map(function (f) { return f.map(q).join(','); }));
+    var blob = new Blob(['\ufeff' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  function grafico(id, config) {
+    var el = document.getElementById(id);
+    if (!el || !window.Chart) return;
+    charts.push(new window.Chart(el, config));
+  }
+  var TEXTO_GRAF = '#c9d3c4';
+  var OPC = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: TEXTO_GRAF } } } };
+
+  /* ---------- Vistas ---------- */
+  function navHTML() {
+    if (!usuario) return '';
+    var p = rutaActual()[0], act = function (n) { return p === n ? 'activo' : ''; };
+    return '<nav class="nav"><a class="marca" href="#/dashboard">Finca</a><div class="enlaces">' +
+      '<a href="#/dashboard" class="' + act('dashboard') + '">Resumen</a>' +
+      '<a href="#/animales" class="' + act('animales') + '">Animales</a>' +
+      '<a href="#/siembras" class="' + act('siembras') + '">Siembras</a>' +
+      (esAdmin() ? '<a href="#/finanzas" class="' + act('finanzas') + '">Finanzas</a>' : '') +
+      '</div><div class="usuario"><span>' + esc(usuario.nombre) + ' (' + usuario.rol + ')</span>' +
+      '<button type="button" class="btn-sec" data-reset>Restablecer demo</button>' +
+      '<button type="button" class="btn-sec" data-salir>Salir</button></div></nav>';
+  }
+
+  function vLogin() {
+    return '<div class="login"><div class="card"><h1>Gestión de ganado y siembras</h1><p class="suave">Ingresa con tu cuenta para continuar.</p>' + flash() +
+      '<form data-form="login"><div class="campo"><label for="email">Correo electrónico</label><input type="email" id="email" name="email" required autocomplete="username"></div>' +
+      '<div class="campo"><label for="password">Contraseña</label><input type="password" id="password" name="password" required autocomplete="current-password"></div>' +
+      '<button type="submit" class="btn">Ingresar</button></form>' +
+      '<div class="demo-accesos"><p>Accesos de demostración:</p>' +
+      '<button type="button" class="btn-sec" data-demo="admin@finca.cl|admin123">Entrar como Administrador</button>' +
+      '<button type="button" class="btn-sec" data-demo="operario@finca.cl|operario123">Entrar como Operario</button></div></div></div>';
+  }
+
+  function vError(codigo, texto) {
+    return '<div class="login"><div class="card centro"><h1>' + codigo + '</h1><p>' + esc(texto) + '</p><p><a class="btn" href="#/dashboard">Volver al inicio</a></p></div></div>';
+  }
+
+  function vDashboard() {
+    var activos = datos.animales.filter(function (a) { return a.estado === 'Activo'; });
+    var por = {}; activos.forEach(function (a) { por[a.especie] = (por[a.especie] || 0) + 1; });
+    var esp = Object.keys(por).map(function (k) { return { especie: k, total: por[k] }; }).sort(function (a, b) { return b.total - a.total; });
+    var al = alertas(), fin = esAdmin() ? finanzas6() : [];
+    var enCurso = datos.siembras.filter(function (s) { return s.estado === 'En curso'; }).length;
+    var filas = al.map(function (x) {
+      var est = x.dias < 0 ? badge('rojo', 'Vencida hace ' + (-x.dias) + ' d') : x.dias === 0 ? badge('amarillo', 'Hoy') : badge('amarillo', 'En ' + x.dias + ' d');
+      return '<tr><td><a href="#/animales/' + x.a.id + '">' + esc(x.a.arete) + (x.a.nombre ? ' · ' + esc(x.a.nombre) : '') + '</a></td><td>' +
+        esc(x.s.tipo) + ': ' + esc(x.s.producto) + '</td><td>' + fechaCL(x.s.proxima) + '</td><td>' + est + '</td></tr>';
+    }).join('');
+    despues = function () {
+      grafico('g-especies', { type: 'doughnut', options: OPC, data: { labels: esp.map(function (e) { return e.especie; }),
+        datasets: [{ data: esp.map(function (e) { return e.total; }), backgroundColor: ['#7CB342', '#C9A227', '#8D6E63', '#4DB6AC', '#E57373', '#9575CD'], borderColor: '#1f2a1d' }] } });
+      grafico('g-finanzas', { type: 'bar', data: { labels: fin.map(function (f) { return f.mes; }),
+        datasets: [{ label: 'Ingresos', data: fin.map(function (f) { return f.ingresos; }), backgroundColor: '#7CB342' },
+                   { label: 'Gastos', data: fin.map(function (f) { return f.gastos; }), backgroundColor: '#E57373' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: OPC.plugins, scales: { x: { ticks: { color: TEXTO_GRAF } }, y: { ticks: { color: TEXTO_GRAF } } } } });
+    };
+    return flash() + '<h1>Resumen de la finca</h1><section class="stats">' +
+      '<div class="stat"><span class="num">' + activos.length + '</span><span>Animales activos</span></div>' +
+      '<div class="stat"><span class="num">' + enCurso + '</span><span>Siembras en curso</span></div>' +
+      '<div class="stat ' + (al.length ? 'stat-alerta' : '') + '"><span class="num">' + al.length + '</span><span>Alertas sanitarias</span></div></section>' +
+      '<div class="dos-col"><section class="card"><h2>Animales activos por especie</h2>' +
+      (esp.length ? '<div class="grafico"><canvas id="g-especies"></canvas></div>' : '<p class="vacio">Aún no hay animales registrados.</p>') + '</section>' +
+      '<section class="card"><h2>Alertas sanitarias (próximos 15 días)</h2>' +
+      (al.length ? '<div class="tabla-scroll"><table><thead><tr><th>Animal</th><th>Pendiente</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>' + filas + '</tbody></table></div>'
+                 : '<p class="vacio">Sin vacunas ni tratamientos pendientes. Todo al día.</p>') + '</section></div>' +
+      (esAdmin() ? '<section class="card"><h2>Ingresos y gastos (últimos 6 meses)</h2>' +
+        (fin.length ? '<div class="grafico"><canvas id="g-finanzas"></canvas></div>' : '<p class="vacio">Aún no hay movimientos registrados.</p>') + '</section>' : '');
+  }
+
+  function vAnimales() {
+    var lista = listaAnimales(), admin = esAdmin();
+    var filas = lista.map(function (a) {
+      var pk = ultimoPeso(a.id);
+      return '<tr><td><strong>' + esc(a.arete) + '</strong></td><td>' + esc(a.nombre || '—') + '</td><td>' + esc(a.especie) + (a.raza ? ' · ' + esc(a.raza) : '') +
+        '</td><td>' + (a.sexo === 'M' ? 'Macho' : 'Hembra') + '</td><td>' + edad(a.nac) + '</td><td>' + esc(a.potrero || '—') + '</td><td>' +
+        (pk ? num(pk, 1) + ' kg' : '—') + '</td><td>' + badge(a.estado === 'Activo' ? 'verde' : 'gris', a.estado) +
+        '</td><td><a class="btn-sec" href="#/animales/' + a.id + '">Ver</a></td></tr>';
+    }).join('') || '<tr><td colspan="9" class="vacio">No hay animales que coincidan con el filtro.</td></tr>';
+    return flash() + '<div class="encabezado"><h1>Animales</h1>' + (admin ?
+      '<div class="acciones"><button type="button" class="btn-sec" data-csv="animales">Exportar CSV</button><a class="btn" href="#/animales/nuevo">Registrar animal</a></div>' : '') + '</div>' +
+      '<form class="filtros card" data-form="filtros"><div class="campo"><label for="q">Buscar</label><input type="search" id="q" name="q" value="' + esc(filtros.q) + '" placeholder="Arete o nombre"></div>' +
+      '<div class="campo"><label for="estado">Estado</label><select id="estado" name="estado"><option value="">Todos</option>' + opts(ESTADOS, filtros.estado) + '</select></div>' +
+      '<div class="campo"><label for="especie">Especie</label><select id="especie" name="especie"><option value="">Todas</option>' + opts(ESPECIES, filtros.especie) + '</select></div>' +
+      '<button type="submit" class="btn">Filtrar</button></form>' +
+      '<section class="card"><div class="tabla-scroll"><table><thead><tr><th>Arete</th><th>Nombre</th><th>Especie / raza</th><th>Sexo</th><th>Edad</th><th>Potrero</th><th>Último peso</th><th>Estado</th><th></th></tr></thead><tbody>' +
+      filas + '</tbody></table></div></section>';
+  }
+
+  function vAnimalForm(id) {
+    var existente = id ? animal(id) : null;
+    if (id && !existente) return vError(404, 'No encontramos esa página.');
+    var a = borrador || existente || { especie: 'Bovino', sexo: 'H', estado: 'Activo' };
+    borrador = null;
+    var campo = function (nombre, etiqueta, valor, extra) {
+      return '<div class="campo"><label for="' + nombre + '">' + etiqueta + '</label><input type="text" id="' + nombre + '" name="' + nombre + '" ' + (extra || '') + ' value="' + esc(valor) + '"></div>';
+    };
+    return flash() + '<h1>' + (id ? 'Editar animal' : 'Registrar animal') + '</h1><section class="card formulario">' +
+      '<form data-form="animal" data-id="' + (id || '') + '"><div class="rejilla">' +
+      campo('arete', 'Arete (identificador) *', a.arete || '', 'maxlength="30" required') + campo('nombre', 'Nombre', a.nombre || '', 'maxlength="60"') +
+      '<div class="campo"><label for="especie">Especie *</label><select id="especie" name="especie" required>' + opts(ESPECIES, a.especie) + '</select></div>' +
+      campo('raza', 'Raza', a.raza || '', 'maxlength="60"') +
+      '<div class="campo"><label for="sexo">Sexo *</label><select id="sexo" name="sexo" required><option value="H"' + (a.sexo === 'H' ? ' selected' : '') + '>Hembra</option><option value="M"' + (a.sexo === 'M' ? ' selected' : '') + '>Macho</option></select></div>' +
+      '<div class="campo"><label for="nac">Fecha de nacimiento</label><input type="date" id="nac" name="nac" value="' + esc(a.nac || '') + '"></div>' +
+      campo('potrero', 'Potrero o ubicación', a.potrero || '', 'maxlength="60"') + campo('origen', 'Origen', a.origen || '', 'maxlength="100" placeholder="Nacido en el predio, compra, etc."') +
+      (id ? '<div class="campo"><label for="estado">Estado</label><select id="estado" name="estado">' + opts(ESTADOS, a.estado) + '</select></div>' : '') +
+      '</div><div class="campo"><label for="notas">Notas</label><textarea id="notas" name="notas" maxlength="300" rows="3">' + esc(a.notas || '') + '</textarea></div>' +
+      '<div class="acciones"><button type="submit" class="btn">Guardar</button><a class="btn-sec" href="#/animales' + (id ? '/' + id : '') + '">Cancelar</a></div></form></section>';
+  }
+
+  function vDetalle(id) {
+    var a = animal(id);
+    if (!a) return vError(404, 'No encontramos esa página.');
+    var admin = esAdmin(), pes = pesajesDe(id), t = hoy();
+    var san = datos.sanidad.filter(function (s) { return s.animal === id; }).sort(function (x, y) { return y.fecha.localeCompare(x.fecha); });
+    var ganancia = null;
+    if (pes.length >= 2) { var dd = dias(pes[0].fecha, pes[pes.length - 1].fecha); if (dd > 0) ganancia = (pes[pes.length - 1].kg - pes[0].kg) / dd; }
+    var btnDel = function (tipo, rid, msg) {
+      return '<td><form data-form="del" data-tipo="' + tipo + '" data-id="' + rid + '" data-confirmar="' + msg + '"><button type="submit" class="btn-peligro">Eliminar</button></form></td>';
+    };
+    var filasPes = pes.slice().reverse().map(function (p) {
+      return '<tr><td>' + fechaCL(p.fecha) + '</td><td>' + num(p.kg, 1) + ' kg</td>' + (admin ? btnDel('pesaje', p.id, '¿Eliminar este pesaje?') : '') + '</tr>';
+    }).join('');
+    var filasSan = san.map(function (s) {
+      return '<tr><td>' + fechaCL(s.fecha) + '</td><td>' + esc(s.tipo) + ': ' + esc(s.producto) + (s.obs ? '<br><span class="suave">' + esc(s.obs) + '</span>' : '') +
+        '</td><td>' + fechaCL(s.proxima) + '</td>' + (admin ? btnDel('sanidad', s.id, '¿Eliminar este registro sanitario?') : '') + '</tr>';
+    }).join('');
+    despues = function () {
+      grafico('g-peso', { type: 'line', options: { responsive: true, maintainAspectRatio: false, plugins: OPC.plugins, scales: { x: { ticks: { color: TEXTO_GRAF } }, y: { ticks: { color: TEXTO_GRAF } } } },
+        data: { labels: pes.map(function (p) { return fechaCL(p.fecha); }), datasets: [{ label: 'Peso (kg)', data: pes.map(function (p) { return p.kg; }), borderColor: '#7CB342', backgroundColor: 'rgba(124,179,66,0.2)', fill: true, tension: 0.3 }] } });
+    };
+    return flash() + '<div class="encabezado"><h1>' + esc(a.arete) + (a.nombre ? ' · ' + esc(a.nombre) : '') + '</h1><div class="acciones"><a class="btn-sec" href="#/animales">Volver a la lista</a>' +
+      (admin ? '<a class="btn" href="#/animales/' + id + '/editar">Editar</a>' : '') + '</div></div>' +
+      '<section class="card"><dl class="datos"><div><dt>Especie</dt><dd>' + esc(a.especie) + '</dd></div><div><dt>Raza</dt><dd>' + esc(a.raza || '—') + '</dd></div>' +
+      '<div><dt>Sexo</dt><dd>' + (a.sexo === 'M' ? 'Macho' : 'Hembra') + '</dd></div><div><dt>Nacimiento</dt><dd>' + fechaCL(a.nac) + ' (' + edad(a.nac) + ')</dd></div>' +
+      '<div><dt>Potrero</dt><dd>' + esc(a.potrero || '—') + '</dd></div><div><dt>Origen</dt><dd>' + esc(a.origen || '—') + '</dd></div>' +
+      '<div><dt>Estado</dt><dd>' + badge(a.estado === 'Activo' ? 'verde' : 'gris', a.estado) + '</dd></div></dl>' + (a.notas ? '<p class="suave">' + esc(a.notas) + '</p>' : '') + '</section>' +
+      '<div class="dos-col"><section class="card"><h2>Evolución del peso</h2>' +
+      (pes.length ? '<p class="suave">Último peso: <strong>' + num(pes[pes.length - 1].kg, 1) + ' kg</strong>' + (ganancia !== null ? ' · Ganancia promedio: <strong>' + num(ganancia, 2) + ' kg por día</strong>' : '') + '</p><div class="grafico"><canvas id="g-peso"></canvas></div>'
+                   : '<p class="vacio">Aún no hay pesajes registrados.</p>') +
+      '<h3>Registrar pesaje</h3><form class="en-linea" data-form="pesaje" data-id="' + id + '">' +
+      '<div class="campo"><label for="p-fecha">Fecha</label><input type="date" id="p-fecha" name="fecha" value="' + t + '" max="' + t + '" required></div>' +
+      '<div class="campo"><label for="p-peso">Peso (kg)</label><input type="number" id="p-peso" name="kg" step="0.1" min="1" required></div>' +
+      '<button type="submit" class="btn">Guardar</button></form>' +
+      (pes.length ? '<div class="tabla-scroll"><table><thead><tr><th>Fecha</th><th>Peso</th>' + (admin ? '<th></th>' : '') + '</tr></thead><tbody>' + filasPes + '</tbody></table></div>' : '') + '</section>' +
+      '<section class="card"><h2>Sanidad</h2><form data-form="sanidad" data-id="' + id + '"><div class="rejilla">' +
+      '<div class="campo"><label for="s-tipo">Tipo</label><select id="s-tipo" name="tipo">' + opts(TIPOS, 'Vacuna') + '</select></div>' +
+      '<div class="campo"><label for="s-producto">Producto *</label><input type="text" id="s-producto" name="producto" maxlength="100" required></div>' +
+      '<div class="campo"><label for="s-fecha">Fecha de aplicación</label><input type="date" id="s-fecha" name="fecha" value="' + t + '" required></div>' +
+      '<div class="campo"><label for="s-proxima">Próxima fecha</label><input type="date" id="s-proxima" name="proxima"></div></div>' +
+      '<div class="campo"><label for="s-obs">Observación</label><input type="text" id="s-obs" name="obs" maxlength="200"></div>' +
+      '<button type="submit" class="btn">Guardar registro</button></form>' +
+      (san.length ? '<div class="tabla-scroll"><table><thead><tr><th>Fecha</th><th>Detalle</th><th>Próxima</th>' + (admin ? '<th></th>' : '') + '</tr></thead><tbody>' + filasSan + '</tbody></table></div>'
+                  : '<p class="vacio">Sin registros sanitarios.</p>') + '</section></div>';
+  }
+
+  function vSiembras() {
+    var admin = esAdmin(), t = hoy();
+    var filas = datos.siembras.slice().sort(function (a, b) { return b.fecha.localeCompare(a.fecha); }).map(function (s) {
+      var kg = datos.cosechas.filter(function (c) { return c.siembra === s.id; }).reduce(function (m, c) { return m + c.kg; }, 0);
+      return '<tr><td><strong>' + esc(s.cultivo) + '</strong></td><td>' + esc(s.parcela) + '</td><td>' + num(s.ha, 2) + ' ha</td><td>' + fechaCL(s.fecha) + '</td><td>' + num(kg, 0) + ' kg</td><td>' +
+        (kg ? num(kg / s.ha, 0) + ' kg/ha' : '—') + '</td><td>' + badge(s.estado === 'En curso' ? 'amarillo' : 'verde', s.estado) + '</td>' +
+        (admin ? '<td><form class="en-linea compacto" data-form="cosecha" data-id="' + s.id + '"><input type="date" name="fecha" value="' + t + '" max="' + t + '" required aria-label="Fecha de cosecha">' +
+          '<input type="number" name="kg" step="0.1" min="0.1" placeholder="kg" required aria-label="Kilos cosechados">' +
+          (s.estado === 'En curso' ? '<label class="check"><input type="checkbox" name="cerrar" value="1"> Cerrar</label>' : '') + '<button type="submit" class="btn-sec">Agregar</button></form></td>' : '') + '</tr>';
+    }).join('') || '<tr><td colspan="8" class="vacio">Aún no hay siembras registradas.</td></tr>';
+    return flash() + '<h1>Siembras y cosechas</h1>' + (admin ?
+      '<section class="card formulario"><h2>Registrar siembra</h2><form data-form="siembra"><div class="rejilla">' +
+      '<div class="campo"><label for="cultivo">Cultivo *</label><input type="text" id="cultivo" name="cultivo" maxlength="80" required placeholder="Avena, maíz, alfalfa..."></div>' +
+      '<div class="campo"><label for="parcela">Parcela *</label><input type="text" id="parcela" name="parcela" maxlength="80" required></div>' +
+      '<div class="campo"><label for="ha">Superficie (ha) *</label><input type="number" id="ha" name="ha" step="0.01" min="0.01" required></div>' +
+      '<div class="campo"><label for="fecha_siembra">Fecha de siembra *</label><input type="date" id="fecha_siembra" name="fecha" value="' + t + '" required></div></div>' +
+      '<button type="submit" class="btn">Guardar siembra</button></form></section>' : '') +
+      '<section class="card"><div class="tabla-scroll"><table><thead><tr><th>Cultivo</th><th>Parcela</th><th>Superficie</th><th>Siembra</th><th>Cosechado</th><th>Rendimiento</th><th>Estado</th>' +
+      (admin ? '<th>Registrar cosecha</th>' : '') + '</tr></thead><tbody>' + filas + '</tbody></table></div></section>';
+  }
+
+  function vFinanzas() {
+    var mes = mesSel || hoy().slice(0, 7), t = hoy();
+    var movs = datos.movs.filter(function (m) { return m.fecha.slice(0, 7) === mes; }).sort(function (a, b) { return b.fecha.localeCompare(a.fecha) || b.id - a.id; });
+    var ing = movs.filter(function (m) { return m.tipo === 'Ingreso'; }).reduce(function (s, m) { return s + m.monto; }, 0);
+    var gas = movs.filter(function (m) { return m.tipo === 'Gasto'; }).reduce(function (s, m) { return s + m.monto; }, 0);
+    var filas = movs.map(function (m) {
+      return '<tr><td>' + fechaCL(m.fecha) + '</td><td>' + badge(m.tipo === 'Ingreso' ? 'verde' : 'rojo', m.cat) + (m.desc ? '<br><span class="suave">' + esc(m.desc) + '</span>' : '') +
+        '</td><td class="' + (m.tipo === 'Ingreso' ? 'verde-t' : 'rojo-t') + '">' + (m.tipo === 'Ingreso' ? '+' : '−') + '$' + num(m.monto) + '</td>' +
+        '<td><form data-form="del" data-tipo="mov" data-id="' + m.id + '" data-confirmar="¿Eliminar este movimiento?"><button type="submit" class="btn-peligro">Eliminar</button></form></td></tr>';
+    }).join('') || '<tr><td colspan="4" class="vacio">No hay movimientos en este mes.</td></tr>';
+    despues = function () { llenarCategorias(); };
+    return flash() + '<div class="encabezado"><h1>Finanzas</h1><div class="acciones"><form data-form="mes" class="en-linea compacto"><input type="month" name="mes" value="' + esc(mes) + '" aria-label="Mes">' +
+      '<button type="submit" class="btn-sec">Ver mes</button></form><button type="button" class="btn-sec" data-csv="finanzas">Exportar CSV</button></div></div>' +
+      '<section class="stats"><div class="stat"><span class="num verde-t">$' + num(ing) + '</span><span>Ingresos del mes</span></div>' +
+      '<div class="stat"><span class="num rojo-t">$' + num(gas) + '</span><span>Gastos del mes</span></div>' +
+      '<div class="stat"><span class="num ' + (ing - gas >= 0 ? 'verde-t' : 'rojo-t') + '">$' + num(ing - gas) + '</span><span>Balance</span></div></section>' +
+      '<div class="dos-col"><section class="card formulario"><h2>Registrar movimiento</h2><form data-form="mov"><div class="rejilla">' +
+      '<div class="campo"><label for="tipo">Tipo</label><select id="tipo" name="tipo"><option value="Gasto">Gasto</option><option value="Ingreso">Ingreso</option></select></div>' +
+      '<div class="campo"><label for="categoria">Categoría</label><select id="categoria" name="categoria"></select></div>' +
+      '<div class="campo"><label for="fecha">Fecha</label><input type="date" id="fecha" name="fecha" value="' + t + '" required></div>' +
+      '<div class="campo"><label for="monto">Monto ($)</label><input type="number" id="monto" name="monto" min="1" step="1" required></div></div>' +
+      '<div class="campo"><label for="descripcion">Descripción</label><input type="text" id="descripcion" name="desc" maxlength="200"></div>' +
+      '<button type="submit" class="btn">Guardar movimiento</button></form></section>' +
+      '<section class="card"><h2>Movimientos de ' + esc(mes) + '</h2><div class="tabla-scroll"><table><thead><tr><th>Fecha</th><th>Detalle</th><th>Monto</th><th></th></tr></thead><tbody>' + filas + '</tbody></table></div></section></div>';
+  }
+  function llenarCategorias() {
+    var tipo = app.querySelector('#tipo'), cat = app.querySelector('#categoria');
+    if (!tipo || !cat) return;
+    var llenar = function () { cat.innerHTML = (CATEGORIAS[tipo.value] || []).map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join(''); };
+    tipo.addEventListener('change', llenar); llenar();
+  }
+
+  /* ---------- Acciones (equivalentes a las rutas POST del proyecto real) ---------- */
+  var errorRepetido = 'No se pudo guardar: hay un dato repetido o relacionado con otro registro.';
+  function valor(f, n) { return f.elements[n] ? String(f.elements[n].value).trim() : ''; }
+
+  acciones.login = function (f) { iniciarSesion(valor(f, 'email').toLowerCase(), f.elements.password.value); };
+
+  acciones.filtros = function (f) {
+    filtros = { q: valor(f, 'q'), estado: valor(f, 'estado'), especie: valor(f, 'especie') };
+    render(true);
+  };
+
+  acciones.animal = function (f) {
+    if (!esAdmin()) return;
+    var id = f.dataset.id ? Number(f.dataset.id) : null;
+    var d = { arete: valor(f, 'arete').slice(0, 30), nombre: valor(f, 'nombre').slice(0, 60), especie: valor(f, 'especie'), raza: valor(f, 'raza').slice(0, 60),
+      sexo: valor(f, 'sexo'), nac: valor(f, 'nac'), potrero: valor(f, 'potrero').slice(0, 60), origen: valor(f, 'origen').slice(0, 100),
+      estado: id ? valor(f, 'estado') : 'Activo', notas: valor(f, 'notas').slice(0, 300) };
+    var error = null;
+    if (!d.arete) error = 'El arete es obligatorio.';
+    else if (ESPECIES.indexOf(d.especie) < 0) error = 'Elige una especie válida.';
+    else if (d.sexo !== 'M' && d.sexo !== 'H') error = 'Elige el sexo del animal.';
+    else if (ESTADOS.indexOf(d.estado) < 0) error = 'Elige un estado válido.';
+    else if (d.nac && !fechaValida(d.nac)) error = 'La fecha de nacimiento no es válida.';
+    else if (d.nac && d.nac > hoy()) error = 'La fecha de nacimiento no puede ser futura.';
+    else if (datos.animales.some(function (a) { return a.arete === d.arete && a.id !== id; })) error = id ? 'Ya existe otro animal con ese arete.' : 'Ya existe un animal con ese arete.';
+    if (error) { aviso('warning', error); borrador = d; return render(true); }
+    if (id) { Object.assign(animal(id), d); aviso('success', 'Animal actualizado correctamente.'); guardar(); ir('#/animales/' + id); }
+    else { d.id = nid(datos.animales); datos.animales.push(d); aviso('success', 'Animal registrado correctamente.'); guardar(); ir('#/animales'); }
+  };
+
+  acciones.pesaje = function (f) {
+    var id = Number(f.dataset.id), fecha = valor(f, 'fecha'), kg = parseFloat(valor(f, 'kg'));
+    if (!fechaValida(fecha) || fecha > hoy() || !isFinite(kg) || !(kg > 0 && kg < 5000)) aviso('warning', 'Revisa la fecha y el peso (en kg).');
+    else if (datos.pesajes.some(function (p) { return p.animal === id && p.fecha === fecha; })) aviso('danger', errorRepetido);
+    else { datos.pesajes.push({ id: nid(datos.pesajes), animal: id, fecha: fecha, kg: kg }); guardar(); aviso('success', 'Pesaje registrado.'); }
+    render(true);
+  };
+
+  acciones.sanidad = function (f) {
+    var id = Number(f.dataset.id), tipo = valor(f, 'tipo'), prod = valor(f, 'producto').slice(0, 100), fecha = valor(f, 'fecha'), prox = valor(f, 'proxima');
+    if (TIPOS.indexOf(tipo) < 0 || !prod || !fechaValida(fecha) || (prox && !fechaValida(prox))) aviso('warning', 'Revisa el tipo, el producto y las fechas.');
+    else if (prox && prox < fecha) aviso('warning', 'La próxima fecha no puede ser anterior a la fecha de aplicación.');
+    else { datos.sanidad.push({ id: nid(datos.sanidad), animal: id, tipo: tipo, producto: prod, fecha: fecha, proxima: prox, obs: valor(f, 'obs').slice(0, 200) }); guardar(); aviso('success', 'Registro sanitario guardado.'); }
+    render(true);
+  };
+
+  acciones.del = function (f) {
+    if (!esAdmin()) return;
+    var id = Number(f.dataset.id), tipo = f.dataset.tipo;
+    var cfg = { pesaje: ['pesajes', 'Pesaje eliminado.'], sanidad: ['sanidad', 'Registro sanitario eliminado.'], mov: ['movs', 'Movimiento eliminado.'] }[tipo];
+    if (!cfg) return;
+    datos[cfg[0]] = datos[cfg[0]].filter(function (x) { return x.id !== id; });
+    guardar(); aviso('info', cfg[1]); render(true);
+  };
+
+  acciones.siembra = function (f) {
+    if (!esAdmin()) return;
+    var cultivo = valor(f, 'cultivo').slice(0, 80), parcela = valor(f, 'parcela').slice(0, 80), ha = parseFloat(valor(f, 'ha')), fecha = valor(f, 'fecha');
+    if (!cultivo || !parcela || !fechaValida(fecha) || !isFinite(ha) || !(ha > 0 && ha < 100000)) aviso('warning', 'Revisa el cultivo, la parcela, la superficie y la fecha.');
+    else { datos.siembras.push({ id: nid(datos.siembras), cultivo: cultivo, parcela: parcela, ha: ha, fecha: fecha, estado: 'En curso' }); guardar(); aviso('success', 'Siembra registrada.'); }
+    render(true);
+  };
+
+  acciones.cosecha = function (f) {
+    if (!esAdmin()) return;
+    var id = Number(f.dataset.id), fecha = valor(f, 'fecha'), kg = parseFloat(valor(f, 'kg'));
+    if (!fechaValida(fecha) || fecha > hoy() || !isFinite(kg) || !(kg > 0 && kg < 100000000)) aviso('warning', 'Revisa la fecha y la cantidad cosechada (en kg).');
+    else {
+      datos.cosechas.push({ id: nid(datos.cosechas), siembra: id, fecha: fecha, kg: kg });
+      if (f.elements.cerrar && f.elements.cerrar.checked) datos.siembras.forEach(function (s) { if (s.id === id) s.estado = 'Cosechada'; });
+      guardar(); aviso('success', 'Cosecha registrada.');
+    }
+    render(true);
+  };
+
+  acciones.mes = function (f) {
+    var m = valor(f, 'mes');
+    if (/^\d{4}-(0[1-9]|1[0-2])$/.test(m)) mesSel = m;
+    render(true);
+  };
+
+  acciones.mov = function (f) {
+    if (!esAdmin()) return;
+    var tipo = valor(f, 'tipo'), cat = valor(f, 'categoria'), fecha = valor(f, 'fecha'), monto = parseFloat(valor(f, 'monto'));
+    if (!CATEGORIAS[tipo] || CATEGORIAS[tipo].indexOf(cat) < 0 || !fechaValida(fecha) || !isFinite(monto) || !(monto > 0 && monto < 10000000000)) {
+      aviso('warning', 'Revisa el tipo, la categoría, la fecha y el monto.');
+    } else {
+      datos.movs.push({ id: nid(datos.movs), fecha: fecha, tipo: tipo, cat: cat, desc: valor(f, 'desc').slice(0, 200), monto: monto });
+      mesSel = fecha.slice(0, 7); guardar(); aviso('success', 'Movimiento registrado.');
+    }
+    render(true);
+  };
+
+  function iniciarSesion(email, clave) {
+    var u = USUARIOS.filter(function (x) { return x.email === email && x.clave === clave; })[0];
+    if (u) {
+      usuario = u;
+      try { sessionStorage.setItem(SESION, u.email); } catch (e) {}
+      if (!location.hash || location.hash === '#/login') history.replaceState(null, '', '#/dashboard');
+    } else {
+      aviso('danger', 'Credenciales incorrectas. Intenta de nuevo.');
+    }
+    render(false);
+  }
+
+  /* ---------- Eventos ---------- */
+  app.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = e.target, nombre = f.dataset.form;
+    if (!acciones[nombre]) return;
+    if (f.dataset.confirmar && !confirm(f.dataset.confirmar)) return;
+    acciones[nombre](f);
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button') : null;
+    if (!b) return;
+    if (b.hasAttribute('data-demo')) { var par = b.getAttribute('data-demo').split('|'); iniciarSesion(par[0], par[1]); }
+    else if (b.hasAttribute('data-salir')) {
+      usuario = null; try { sessionStorage.removeItem(SESION); } catch (err) {}
+      aviso('info', 'Has cerrado sesión correctamente.'); history.replaceState(null, '', '#/login'); render(false);
+    } else if (b.hasAttribute('data-reset')) {
+      if (!confirm('¿Restablecer la demo a sus datos iniciales? Se borrarán tus cambios.')) return;
+      datos = semilla(); guardar(); mesSel = null; filtros = { q: '', estado: 'Activo', especie: '' };
+      aviso('info', 'Demo restablecida a sus datos iniciales.'); render(false);
+    } else if (b.getAttribute('data-csv') === 'animales' && esAdmin()) {
+      descargar('animales.csv', ['Arete', 'Nombre', 'Especie', 'Raza', 'Sexo', 'Nacimiento', 'Potrero', 'Estado', 'Último peso (kg)'],
+        listaAnimales().map(function (a) { return [a.arete, a.nombre, a.especie, a.raza, a.sexo, a.nac, a.potrero, a.estado, ultimoPeso(a.id)]; }));
+    } else if (b.getAttribute('data-csv') === 'finanzas' && esAdmin()) {
+      var mes = mesSel || hoy().slice(0, 7);
+      descargar('finanzas_' + mes + '.csv', ['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto ($)'],
+        datos.movs.filter(function (m) { return m.fecha.slice(0, 7) === mes; }).map(function (m) { return [m.fecha, m.tipo, m.cat, m.desc, m.monto]; }));
+    }
+  });
+
+  /* ---------- Rutas ---------- */
+  function rutaActual() { return (location.hash || '#/dashboard').replace(/^#\/?/, '').split('?')[0].split('/'); }
+
+  function render(conservar) {
+    var y = window.scrollY;
+    charts.forEach(function (c) { try { c.destroy(); } catch (e) {} });
+    charts = []; despues = null;
+    var html;
+    try {
+      if (!usuario) html = vLogin();
+      else {
+        var r = rutaActual(), p = r[0];
+        if (!esAdmin() && (p === 'finanzas' || (p === 'animales' && (r[1] === 'nuevo' || r[2] === 'editar')))) {
+          aviso('danger', 'Acceso no autorizado.'); history.replaceState(null, '', '#/dashboard'); r = ['dashboard']; p = 'dashboard';
+        }
+        if (p === 'animales') {
+          html = r[1] === 'nuevo' ? vAnimalForm(null) : r[1] && r[2] === 'editar' ? vAnimalForm(Number(r[1])) : r[1] ? vDetalle(Number(r[1])) : vAnimales();
+        } else if (p === 'siembras') html = vSiembras();
+        else if (p === 'finanzas') html = vFinanzas();
+        else html = vDashboard();
+      }
+    } catch (e) {
+      console.error(e);
+      html = '<div class="alerta alerta-danger">Ocurrió un error al mostrar la página.</div>';
+    }
+    navEl.innerHTML = navHTML();
+    app.innerHTML = html;
+    if (despues) despues();
+    window.scrollTo(0, conservar ? y : 0);
+  }
+
+  window.addEventListener('hashchange', function () { render(false); });
+  datos = cargar();
+  usuario = sesionGuardada();
+  render(false);
+})();
+</script>
+</body>
+</html>
