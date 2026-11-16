@@ -24,12 +24,6 @@ Aplicación web para administrar una finca: animales, pesajes, sanidad, siembras
 | Registrar siembras y cosechas | Sí | No |
 | Finanzas y exportar CSV | Sí | No |
 
-## Capturas
-
-| Ficha del animal | Finanzas |
-| --- | --- |
-| ![Ficha](docs/animal.png) | ![Finanzas](docs/finanzas.png) |
-
 ## Tecnologías
 
 - Python 3 y Flask
