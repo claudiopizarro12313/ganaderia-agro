@@ -1,0 +1,3 @@
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro opciones(lista, actual) %}{% for x in lista %}<option value="{{ x }}" {{ 'selected' if x == actual }}>{{ x }}</option>{% endfor %}{% endmacro %}

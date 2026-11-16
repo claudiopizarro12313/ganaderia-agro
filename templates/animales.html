@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% import '_macros.html' as m %}
+{% block titulo %}Animales{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+    <h1>Animales</h1>
+    {% if session.get('rol') == 'Administrador' %}
+    <div class="acciones">
+        <a class="btn-sec" href="{{ url_for('animales_csv', q=filtros.q, estado=filtros.estado, especie=filtros.especie) }}">Exportar CSV</a>
+        <a class="btn" href="{{ url_for('animal_nuevo') }}">Registrar animal</a>
+    </div>
+    {% endif %}
+</div>
+
+<form class="filtros card" method="GET" action="{{ url_for('animales') }}">
+    <div class="campo"><label for="q">Buscar</label>
+        <input type="search" id="q" name="q" value="{{ filtros.q }}" placeholder="Arete o nombre"></div>
+    <div class="campo"><label for="estado">Estado</label>
+        <select id="estado" name="estado"><option value="">Todos</option>{{ m.opciones(ESTADOS, filtros.estado) }}</select></div>
+    <div class="campo"><label for="especie">Especie</label>
+        <select id="especie" name="especie"><option value="">Todas</option>{{ m.opciones(ESPECIES, filtros.especie) }}</select></div>
+    <button type="submit" class="btn">Filtrar</button>
+</form>
+
+<section class="card">
+    <div class="tabla-scroll">
+    <table>
+        <thead><tr><th>Arete</th><th>Nombre</th><th>Especie / raza</th><th>Sexo</th><th>Edad</th><th>Potrero</th><th>Último peso</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+        {% for a in animales %}
+            <tr>
+                <td><strong>{{ a.arete }}</strong></td>
+                <td>{{ a.nombre or '—' }}</td>
+                <td>{{ a.especie }}{% if a.raza %} · {{ a.raza }}{% endif %}</td>
+                <td>{{ 'Macho' if a.sexo == 'M' else 'Hembra' }}</td>
+                <td>{{ a.fecha_nacimiento|edad }}</td>
+                <td>{{ a.potrero or '—' }}</td>
+                <td>{% if a.ultimo_peso %}{{ a.ultimo_peso|num(1) }} kg{% else %}—{% endif %}</td>
+                <td><span class="badge {{ 'verde' if a.estado == 'Activo' else 'gris' }}">{{ a.estado }}</span></td>
+                <td><a class="btn-sec" href="{{ url_for('animal_detalle', id_animal=a.id_animal) }}">Ver</a></td>
+            </tr>
+        {% else %}
+            <tr><td colspan="9" class="vacio">No hay animales que coincidan con el filtro.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block titulo %}Resumen{% endblock %}
+{% block contenido %}
+<h1>Resumen de la finca</h1>
+
+<section class="stats">
+    <div class="stat"><span class="num">{{ resumen.animales }}</span><span>Animales activos</span></div>
+    <div class="stat"><span class="num">{{ resumen.siembras }}</span><span>Siembras en curso</span></div>
+    <div class="stat {{ 'stat-alerta' if alertas }}"><span class="num">{{ alertas|length }}</span><span>Alertas sanitarias</span></div>
+</section>
+
+<div class="dos-col">
+    <section class="card">
+        <h2>Animales activos por especie</h2>
+        {% if especies %}
+            <div class="grafico"><canvas id="g-especies"></canvas></div>
+        {% else %}
+            <p class="vacio">Aún no hay animales registrados.</p>
+        {% endif %}
+    </section>
+
+    <section class="card">
+        <h2>Alertas sanitarias (próximos 15 días)</h2>
+        {% if alertas %}
+        <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Animal</th><th>Pendiente</th><th>Fecha</th><th>Estado</th></tr></thead>
+            <tbody>
+            {% for a in alertas %}
+                <tr>
+                    <td><a href="{{ url_for('animal_detalle', id_animal=a.id_animal) }}">{{ a.arete }}{% if a.nombre %} · {{ a.nombre }}{% endif %}</a></td>
+                    <td>{{ a.tipo }}: {{ a.producto }}</td>
+                    <td>{{ a.proxima_fecha|fecha }}</td>
+                    <td>
+                        {% if a.dias|int < 0 %}<span class="badge rojo">Vencida hace {{ -(a.dias|int) }} d</span>
+                        {% elif a.dias|int == 0 %}<span class="badge amarillo">Hoy</span>
+                        {% else %}<span class="badge amarillo">En {{ a.dias|int }} d</span>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <p class="vacio">Sin vacunas ni tratamientos pendientes. Todo al día.</p>
+        {% endif %}
+    </section>
+</div>
+
+{% if session.get('rol') == 'Administrador' %}
+<section class="card">
+    <h2>Ingresos y gastos (últimos 6 meses)</h2>
+    {% if finanzas %}
+        <div class="grafico"><canvas id="g-finanzas"></canvas></div>
+    {% else %}
+        <p class="vacio">Aún no hay movimientos registrados.</p>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+const especies = {{ especies|tojson }};
+const finanzas = {{ finanzas|tojson }};
+const colorTexto = '#c9d3c4';
+const opciones = { responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: colorTexto } } } };
+
+if (document.getElementById('g-especies')) {
+    new Chart(document.getElementById('g-especies'), {
+        type: 'doughnut',
+        data: { labels: especies.map(e => e.especie),
+                datasets: [{ data: especies.map(e => e.total),
+                             backgroundColor: ['#7CB342', '#C9A227', '#8D6E63', '#4DB6AC', '#E57373', '#9575CD'],
+                             borderColor: '#1f2a1d' }] },
+        options: opciones
+    });
+}
+if (document.getElementById('g-finanzas')) {
+    new Chart(document.getElementById('g-finanzas'), {
+        type: 'bar',
+        data: { labels: finanzas.map(f => f.mes),
+                datasets: [{ label: 'Ingresos', data: finanzas.map(f => f.ingresos), backgroundColor: '#7CB342' },
+                           { label: 'Gastos', data: finanzas.map(f => f.gastos), backgroundColor: '#E57373' }] },
+        options: { ...opciones, scales: { x: { ticks: { color: colorTexto } }, y: { ticks: { color: colorTexto } } } }
+    });
+}
+</script>
+{% endblock %}

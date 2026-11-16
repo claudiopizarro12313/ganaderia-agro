@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% import '_macros.html' as m %}
+{% block titulo %}Finanzas{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+    <h1>Finanzas</h1>
+    <div class="acciones">
+        <form method="GET" action="{{ url_for('finanzas') }}" class="en-linea compacto">
+            <input type="month" name="mes" value="{{ mes }}" aria-label="Mes">
+            <button type="submit" class="btn-sec">Ver mes</button>
+        </form>
+        <a class="btn-sec" href="{{ url_for('finanzas_csv', mes=mes) }}">Exportar CSV</a>
+    </div>
+</div>
+
+<section class="stats">
+    <div class="stat"><span class="num verde-t">${{ ingresos|num(0) }}</span><span>Ingresos del mes</span></div>
+    <div class="stat"><span class="num rojo-t">${{ gastos|num(0) }}</span><span>Gastos del mes</span></div>
+    <div class="stat"><span class="num {{ 'verde-t' if ingresos - gastos >= 0 else 'rojo-t' }}">${{ (ingresos - gastos)|num(0) }}</span><span>Balance</span></div>
+</section>
+
+<div class="dos-col">
+    <section class="card formulario">
+        <h2>Registrar movimiento</h2>
+        <form method="POST" action="{{ url_for('movimiento_nuevo') }}">
+            {{ m.csrf() }}
+            <div class="rejilla">
+                <div class="campo"><label for="tipo">Tipo</label>
+                    <select id="tipo" name="tipo" data-categorias='{{ CATEGORIAS|tojson }}'>
+                        <option value="Gasto">Gasto</option><option value="Ingreso">Ingreso</option></select></div>
+                <div class="campo"><label for="categoria">Categoría</label>
+                    <select id="categoria" name="categoria"></select></div>
+                <div class="campo"><label for="fecha">Fecha</label>
+                    <input type="date" id="fecha" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" required></div>
+                <div class="campo"><label for="monto">Monto ($)</label>
+                    <input type="number" id="monto" name="monto" min="1" step="1" required></div>
+            </div>
+            <div class="campo"><label for="descripcion">Descripción</label>
+                <input type="text" id="descripcion" name="descripcion" maxlength="200"></div>
+            <button type="submit" class="btn">Guardar movimiento</button>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Movimientos de {{ mes }}</h2>
+        <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Fecha</th><th>Detalle</th><th>Monto</th><th></th></tr></thead>
+            <tbody>
+            {% for mov in movimientos %}
+                <tr>
+                    <td>{{ mov.fecha|fecha }}</td>
+                    <td><span class="badge {{ 'verde' if mov.tipo == 'Ingreso' else 'rojo' }}">{{ mov.categoria }}</span>{% if mov.descripcion %}<br><span class="suave">{{ mov.descripcion }}</span>{% endif %}</td>
+                    <td class="{{ 'verde-t' if mov.tipo == 'Ingreso' else 'rojo-t' }}">{{ '+' if mov.tipo == 'Ingreso' else '−' }}${{ mov.monto|num(0) }}</td>
+                    <td><form method="POST" action="{{ url_for('movimiento_eliminar', id_movimiento=mov.id_movimiento) }}" data-confirmar="¿Eliminar este movimiento?">{{ m.csrf() }}<button type="submit" class="btn-peligro">Eliminar</button></form></td>
+                </tr>
+            {% else %}
+                <tr><td colspan="4" class="vacio">No hay movimientos en este mes.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

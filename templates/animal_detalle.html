@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% import '_macros.html' as m %}
+{% block titulo %}{{ animal.arete }}{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+    <h1>{{ animal.arete }}{% if animal.nombre %} · {{ animal.nombre }}{% endif %}</h1>
+    <div class="acciones">
+        <a class="btn-sec" href="{{ url_for('animales') }}">Volver a la lista</a>
+        {% if session.get('rol') == 'Administrador' %}
+        <a class="btn" href="{{ url_for('animal_editar', id_animal=animal.id_animal) }}">Editar</a>
+        {% endif %}
+    </div>
+</div>
+
+<section class="card">
+    <dl class="datos">
+        <div><dt>Especie</dt><dd>{{ animal.especie }}</dd></div>
+        <div><dt>Raza</dt><dd>{{ animal.raza or '—' }}</dd></div>
+        <div><dt>Sexo</dt><dd>{{ 'Macho' if animal.sexo == 'M' else 'Hembra' }}</dd></div>
+        <div><dt>Nacimiento</dt><dd>{{ animal.fecha_nacimiento|fecha }} ({{ animal.fecha_nacimiento|edad }})</dd></div>
+        <div><dt>Potrero</dt><dd>{{ animal.potrero or '—' }}</dd></div>
+        <div><dt>Origen</dt><dd>{{ animal.origen or '—' }}</dd></div>
+        <div><dt>Estado</dt><dd><span class="badge {{ 'verde' if animal.estado == 'Activo' else 'gris' }}">{{ animal.estado }}</span></dd></div>
+    </dl>
+    {% if animal.notas %}<p class="suave">{{ animal.notas }}</p>{% endif %}
+</section>
+
+<div class="dos-col">
+    <section class="card">
+        <h2>Evolución del peso</h2>
+        {% if pesajes %}
+            <p class="suave">
+                Último peso: <strong>{{ pesajes[-1].peso_kg|num(1) }} kg</strong>
+                {% if ganancia is not none %} · Ganancia promedio: <strong>{{ ganancia|num(2) }} kg por día</strong>{% endif %}
+            </p>
+            <div class="grafico"><canvas id="g-peso"></canvas></div>
+        {% else %}
+            <p class="vacio">Aún no hay pesajes registrados.</p>
+        {% endif %}
+
+        <h3>Registrar pesaje</h3>
+        <form method="POST" action="{{ url_for('pesaje_nuevo', id_animal=animal.id_animal) }}" class="en-linea">
+            {{ m.csrf() }}
+            <div class="campo"><label for="p-fecha">Fecha</label>
+                <input type="date" id="p-fecha" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" max="{{ hoy.strftime('%Y-%m-%d') }}" required></div>
+            <div class="campo"><label for="p-peso">Peso (kg)</label>
+                <input type="number" id="p-peso" name="peso_kg" step="0.1" min="1" required></div>
+            <button type="submit" class="btn">Guardar</button>
+        </form>
+
+        {% if pesajes %}
+        <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Fecha</th><th>Peso</th>{% if session.get('rol') == 'Administrador' %}<th></th>{% endif %}</tr></thead>
+            <tbody>
+            {% for p in pesajes|reverse %}
+                <tr>
+                    <td>{{ p.fecha|fecha }}</td><td>{{ p.peso_kg|num(1) }} kg</td>
+                    {% if session.get('rol') == 'Administrador' %}
+                    <td><form method="POST" action="{{ url_for('pesaje_eliminar', id_pesaje=p.id_pesaje) }}" data-confirmar="¿Eliminar este pesaje?">{{ m.csrf() }}<button type="submit" class="btn-peligro">Eliminar</button></form></td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="card">
+        <h2>Sanidad</h2>
+        <form method="POST" action="{{ url_for('sanidad_nueva', id_animal=animal.id_animal) }}">
+            {{ m.csrf() }}
+            <div class="rejilla">
+                <div class="campo"><label for="s-tipo">Tipo</label>
+                    <select id="s-tipo" name="tipo">{{ m.opciones(TIPOS_SANIDAD, 'Vacuna') }}</select></div>
+                <div class="campo"><label for="s-producto">Producto *</label>
+                    <input type="text" id="s-producto" name="producto" maxlength="100" required></div>
+                <div class="campo"><label for="s-fecha">Fecha de aplicación</label>
+                    <input type="date" id="s-fecha" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" required></div>
+                <div class="campo"><label for="s-proxima">Próxima fecha</label>
+                    <input type="date" id="s-proxima" name="proxima_fecha"></div>
+            </div>
+            <div class="campo"><label for="s-obs">Observación</label>
+                <input type="text" id="s-obs" name="observacion" maxlength="200"></div>
+            <button type="submit" class="btn">Guardar registro</button>
+        </form>
+
+        {% if sanidad %}
+        <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Fecha</th><th>Detalle</th><th>Próxima</th>{% if session.get('rol') == 'Administrador' %}<th></th>{% endif %}</tr></thead>
+            <tbody>
+            {% for s in sanidad %}
+                <tr>
+                    <td>{{ s.fecha|fecha }}</td>
+                    <td>{{ s.tipo }}: {{ s.producto }}{% if s.observacion %}<br><span class="suave">{{ s.observacion }}</span>{% endif %}</td>
+                    <td>{{ s.proxima_fecha|fecha }}</td>
+                    {% if session.get('rol') == 'Administrador' %}
+                    <td><form method="POST" action="{{ url_for('sanidad_eliminar', id_sanidad=s.id_sanidad) }}" data-confirmar="¿Eliminar este registro sanitario?">{{ m.csrf() }}<button type="submit" class="btn-peligro">Eliminar</button></form></td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <p class="vacio">Sin registros sanitarios.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if pesajes %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+const grafico = {{ grafico|tojson }};
+new Chart(document.getElementById('g-peso'), {
+    type: 'line',
+    data: { labels: grafico.etiquetas,
+            datasets: [{ label: 'Peso (kg)', data: grafico.datos, borderColor: '#7CB342',
+                         backgroundColor: 'rgba(124,179,66,0.2)', fill: true, tension: 0.3 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+               plugins: { legend: { labels: { color: '#c9d3c4' } } },
+               scales: { x: { ticks: { color: '#c9d3c4' } }, y: { ticks: { color: '#c9d3c4' } } } }
+});
+</script>
+{% endif %}
+{% endblock %}

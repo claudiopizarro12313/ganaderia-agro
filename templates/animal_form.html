@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% import '_macros.html' as m %}
+{% block titulo %}{{ 'Editar animal' if id_animal else 'Registrar animal' }}{% endblock %}
+{% block contenido %}
+<h1>{{ 'Editar animal' if id_animal else 'Registrar animal' }}</h1>
+<section class="card formulario">
+    <form method="POST" action="{{ url_for('animal_editar', id_animal=id_animal) if id_animal else url_for('animal_nuevo') }}">
+        {{ m.csrf() }}
+        <div class="rejilla">
+            <div class="campo"><label for="arete">Arete (identificador) *</label>
+                <input type="text" id="arete" name="arete" maxlength="30" required value="{{ animal.arete if animal else '' }}"></div>
+            <div class="campo"><label for="nombre">Nombre</label>
+                <input type="text" id="nombre" name="nombre" maxlength="60" value="{{ (animal.nombre or '') if animal else '' }}"></div>
+            <div class="campo"><label for="especie">Especie *</label>
+                <select id="especie" name="especie" required>{{ m.opciones(ESPECIES, animal.especie if animal else 'Bovino') }}</select></div>
+            <div class="campo"><label for="raza">Raza</label>
+                <input type="text" id="raza" name="raza" maxlength="60" value="{{ (animal.raza or '') if animal else '' }}"></div>
+            <div class="campo"><label for="sexo">Sexo *</label>
+                <select id="sexo" name="sexo" required>
+                    <option value="H" {{ 'selected' if animal and animal.sexo == 'H' }}>Hembra</option>
+                    <option value="M" {{ 'selected' if animal and animal.sexo == 'M' }}>Macho</option>
+                </select></div>
+            <div class="campo"><label for="fecha_nacimiento">Fecha de nacimiento</label>
+                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento"
+                       value="{{ animal.fecha_nacimiento.strftime('%Y-%m-%d') if animal and animal.fecha_nacimiento else '' }}"></div>
+            <div class="campo"><label for="potrero">Potrero o ubicación</label>
+                <input type="text" id="potrero" name="potrero" maxlength="60" value="{{ (animal.potrero or '') if animal else '' }}"></div>
+            <div class="campo"><label for="origen">Origen</label>
+                <input type="text" id="origen" name="origen" maxlength="100" placeholder="Nacido en el predio, compra, etc." value="{{ (animal.origen or '') if animal else '' }}"></div>
+            {% if id_animal %}
+            <div class="campo"><label for="estado">Estado</label>
+                <select id="estado" name="estado">{{ m.opciones(ESTADOS, animal.estado) }}</select></div>
+            {% endif %}
+        </div>
+        <div class="campo"><label for="notas">Notas</label>
+            <textarea id="notas" name="notas" maxlength="300" rows="3">{{ (animal.notas or '') if animal else '' }}</textarea></div>
+        <div class="acciones">
+            <button type="submit" class="btn">Guardar</button>
+            <a class="btn-sec" href="{{ url_for('animal_detalle', id_animal=id_animal) if id_animal else url_for('animales') }}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

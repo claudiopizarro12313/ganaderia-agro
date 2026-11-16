@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% import '_macros.html' as m %}
+{% block titulo %}Siembras{% endblock %}
+{% block contenido %}
+<h1>Siembras y cosechas</h1>
+
+{% if session.get('rol') == 'Administrador' %}
+<section class="card formulario">
+    <h2>Registrar siembra</h2>
+    <form method="POST" action="{{ url_for('siembra_nueva') }}">
+        {{ m.csrf() }}
+        <div class="rejilla">
+            <div class="campo"><label for="cultivo">Cultivo *</label>
+                <input type="text" id="cultivo" name="cultivo" maxlength="80" required placeholder="Avena, maíz, alfalfa..."></div>
+            <div class="campo"><label for="parcela">Parcela *</label>
+                <input type="text" id="parcela" name="parcela" maxlength="80" required></div>
+            <div class="campo"><label for="superficie">Superficie (ha) *</label>
+                <input type="number" id="superficie" name="superficie_ha" step="0.01" min="0.01" required></div>
+            <div class="campo"><label for="fecha_siembra">Fecha de siembra *</label>
+                <input type="date" id="fecha_siembra" name="fecha_siembra" value="{{ hoy.strftime('%Y-%m-%d') }}" required></div>
+        </div>
+        <div class="campo"><label for="notas">Notas</label>
+            <input type="text" id="notas" name="notas" maxlength="200"></div>
+        <button type="submit" class="btn">Guardar siembra</button>
+    </form>
+</section>
+{% endif %}
+
+<section class="card">
+    <div class="tabla-scroll">
+    <table>
+        <thead><tr><th>Cultivo</th><th>Parcela</th><th>Superficie</th><th>Siembra</th><th>Cosechado</th><th>Rendimiento</th><th>Estado</th>{% if session.get('rol') == 'Administrador' %}<th>Registrar cosecha</th>{% endif %}</tr></thead>
+        <tbody>
+        {% for s in siembras %}
+            <tr>
+                <td><strong>{{ s.cultivo }}</strong></td>
+                <td>{{ s.parcela }}</td>
+                <td>{{ s.superficie_ha|num(2) }} ha</td>
+                <td>{{ s.fecha_siembra|fecha }}</td>
+                <td>{{ s.cosechado_kg|num(0) }} kg</td>
+                <td>{% if s.cosechado_kg %}{{ (s.cosechado_kg / s.superficie_ha)|num(0) }} kg/ha{% else %}—{% endif %}</td>
+                <td><span class="badge {{ 'amarillo' if s.estado == 'En curso' else 'verde' }}">{{ s.estado }}</span></td>
+                {% if session.get('rol') == 'Administrador' %}
+                <td>
+                    <form method="POST" action="{{ url_for('cosecha_nueva', id_siembra=s.id_siembra) }}" class="en-linea compacto">
+                        {{ m.csrf() }}
+                        <input type="date" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" max="{{ hoy.strftime('%Y-%m-%d') }}" required aria-label="Fecha de cosecha">
+                        <input type="number" name="cantidad_kg" step="0.1" min="0.1" placeholder="kg" required aria-label="Kilos cosechados">
+                        {% if s.estado == 'En curso' %}<label class="check"><input type="checkbox" name="cerrar" value="1"> Cerrar</label>{% endif %}
+                        <button type="submit" class="btn-sec">Agregar</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+        {% else %}
+            <tr><td colspan="8" class="vacio">Aún no hay siembras registradas.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endblock %}

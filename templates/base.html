@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Finca{% endblock %} | Gestión de ganado y siembras</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+{% import '_macros.html' as m %}
+{% if session.get('usuario_id') %}
+<nav class="nav">
+    <a class="marca" href="{{ url_for('dashboard') }}">Finca</a>
+    <div class="enlaces">
+        <a href="{{ url_for('dashboard') }}" class="{{ 'activo' if request.endpoint == 'dashboard' }}">Resumen</a>
+        <a href="{{ url_for('animales') }}" class="{{ 'activo' if request.endpoint in ('animales', 'animal_detalle', 'animal_nuevo', 'animal_editar') }}">Animales</a>
+        <a href="{{ url_for('siembras') }}" class="{{ 'activo' if request.endpoint == 'siembras' }}">Siembras</a>
+        {% if session.get('rol') == 'Administrador' %}
+        <a href="{{ url_for('finanzas') }}" class="{{ 'activo' if request.endpoint == 'finanzas' }}">Finanzas</a>
+        {% endif %}
+    </div>
+    <div class="usuario">
+        <span>{{ session.get('usuario') }} ({{ session.get('rol') }})</span>
+        <form action="{{ url_for('logout') }}" method="POST">{{ m.csrf() }}<button type="submit" class="btn-sec">Salir</button></form>
+    </div>
+</nav>
+{% endif %}
+
+<main class="pagina">
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% for categoria, mensaje in mensajes %}
+            <div class="alerta alerta-{{ categoria }}" role="status">{{ mensaje }}</div>
+        {% endfor %}
+    {% endwith %}
+    {% block contenido %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
